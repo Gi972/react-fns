@@ -9,6 +9,7 @@ import * as React from 'react';
 import { SharedRenderProps } from '../types';
 import { isEmptyChildren } from '../utils';
 import { throttle } from '../utils/throttle';
+import { supportsPassiveListener } from '../utils/featureDetection';
 
 export interface ScrollProps {
   x: number;
@@ -23,7 +24,7 @@ export class Scroll extends React.Component<
   ScrollConfig & SharedRenderProps<ScrollProps>,
   ScrollProps
 > {
-  static defaultProps = {
+  static defaultProps: Partial<ScrollConfig> = {
     throttle: 100,
   };
 
@@ -31,11 +32,15 @@ export class Scroll extends React.Component<
 
   handleWindowScroll = throttle(() => {
     this.setState({ x: window.scrollX, y: window.scrollY });
-  }, this.props.throttle);
+  }, this.props.throttle!);
 
   componentDidMount() {
     this.handleWindowScroll();
-    window.addEventListener('scroll', this.handleWindowScroll);
+    (window as EventTarget).addEventListener(
+      'scroll',
+      this.handleWindowScroll,
+      supportsPassiveListener ? { passive: true } : false
+    );
   }
 
   componentWillUnmount() {
